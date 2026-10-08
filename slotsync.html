@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SlotSync (PS-08) — Conflict-Free Lab Resource Booking</title>
+    <meta name="description"
+        content="Conflict-free lab resource booking system for 3D printers, soldering stations, and lab spaces with fair-use limit enforcement.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <!-- Header Bar -->
+    <header class="app-header" id="appHeader">
+        <div class="header-inner container">
+            <div class="brand-group">
+                <div class="brand-logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="3" ry="3"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="brand-title-wrap">
+                        <h1 class="brand-title">SlotSync <span class="tag-ps">PS-08</span></h1>
+                        <span class="live-pill"><span class="pulse-dot"></span> Server Active</span>
+                    </div>
+                    <p class="brand-subtitle">Book the lab without clashes • 2h Fair-Use Enforced</p>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="nav-tabs" id="mainNav" aria-label="Main Navigation">
+                <button class="nav-tab active" data-tab="grid" id="navGridBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Availability Grid
+                </button>
+                <button class="nav-tab" data-tab="my-bookings" id="navMyBookingsBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    My Bookings <span class="badge-count" id="myBookingsBadge">0</span>
+                </button>
+                <button class="nav-tab" data-tab="admin" id="navAdminBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                    Lab Overview (Admin)
+                </button>
+                <button class="nav-tab" data-tab="tests" id="navTestsBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    Acceptance Tests <span class="badge-pill">Verify</span>
+                </button>
+                <button class="nav-tab" data-tab="rules" id="navRulesBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    Rules &amp; Skills Guide
+                </button>
+            </nav>
+
+            <!-- Active Student Profile Bar -->
+            <div class="user-profile-badge" id="userProfileBadge">
+                <div class="avatar-icon">
+                    <span id="userAvatarText">AK</span>
+                </div>
+                <div class="user-meta">
+                    <span class="user-name" id="currentUserName">Asha K</span>
+                    <span class="user-reg" id="currentUserReg">RA2511003010001</span>
+                </div>
+                <button class="btn-ghost-sm" id="btnSwitchUser"
+                    title="Switch or edit active registration profile">Switch</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Notification Banner -->
+    <aside class="global-toast-container" id="toastContainer" aria-live="polite"></aside>
+
+    <!-- Main View Container -->
+    <main class="container main-content" id="mainContainer">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: AVAILABILITY GRID (CORE MUST-BUILD) -->
+        <!-- ========================================== -->
+        <section class="tab-panel active" id="tabGrid" aria-labelledby="navGridBtn">
+
+            <!-- Fair-Use Policy Banner & Quota Meter -->
+            <div class="policy-card glass-panel" id="policyCard">
+                <div class="policy-content">
+                    <div class="policy-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="policy-title">Fair-Use Rule R5: Max 2 Hours / Person / Resource / Day</h2>
+                        <p class="policy-desc">Strict server-side enforcement. Once 2 hours are booked on a resource for
+                            a day, subsequent attempts are rejected (HTTP 422). Cancel a booking to instantly free your
+                            allowance.</p>
+                    </div>
+                </div>
+
+                <!-- Live Quota Tracker for Selected Resource & Date -->
+                <div class="quota-meter-wrap" id="quotaMeterWrap">
+                    <div class="quota-header">
+                        <span class="quota-label">My Quota for <strong id="quotaDateLabel">Today</strong> on <strong
+                                id="quotaResourceLabel">3D Printer</strong>:</span>
+                        <span class="quota-fraction" id="quotaFraction">0 / 2 hours</span>
+                    </div>
+                    <div class="quota-bar-track">
+                        <div class="quota-bar-fill" id="quotaBarFill" style="width: 0%;"></div>
+                    </div>
+                    <span class="quota-status-text" id="quotaStatusText">2 slots available today</span>
+                </div>
+            </div>
+
+            <!-- Controls & Selector Bar -->
+            <div class="controls-card glass-panel">
+
+                <!-- Resource Selector Tabs -->
+                <div class="resource-selector-wrap">
+                    <span class="control-label">Select Equipment:</span>
+                    <div class="resource-pill-group" id="resourcePills" role="radiogroup">
+                        <!-- Injected dynamically via JS: 3D Printer, Soldering Station 1, Soldering Station 2, Lab Room -->
+                    </div>
+                </div>
+
+                <!-- 7-Day Quick Navigator -->
+                <div class="date-navigator-wrap">
+                    <div class="date-nav-header">
+                        <span class="control-label">7-Day Booking Window:</span>
+                        <span class="date-current-range" id="dateCurrentRange">Next 7 Days (Rule R2)</span>
+                    </div>
+                    <div class="date-pill-scroll" id="datePillGroup" role="radiogroup">
+                        <!-- 7 Days pills injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Legend & Quick Filter -->
+                <div class="grid-legend">
+                    <div class="legend-item"><span class="legend-chip chip-available"></span> Available</div>
+                    <div class="legend-item"><span class="legend-chip chip-mine"></span> Mine (Booked by you)</div>
+                    <div class="legend-item"><span class="legend-chip chip-booked"></span> Booked (Taken)</div>
+                    <div class="legend-item"><span class="legend-chip chip-past"></span> Past (Disabled)</div>
+                    <div class="legend-actions">
+                        <button class="btn-refresh" id="btnRefreshGrid" title="Refresh availability grid">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resource Info Banner -->
+            <div class="resource-detail-banner glass-panel" id="resourceDetailBanner">
+                <div class="resource-meta-left">
+                    <div class="resource-badge-icon" id="resourceIcon">🖨️</div>
+                    <div>
+                        <h3 class="resource-name" id="selectedResourceTitle">3D Printer (Ultimaker S5)</h3>
+                        <p class="resource-type-desc" id="selectedResourceDesc">High-precision dual-extrusion FDM 3D
+                            printer for prototyping and enclosures.</p>
+                    </div>
+                </div>
+                <div class="resource-quick-stats">
+                    <div class="stat-box">
+                        <span class="stat-number" id="statFreeToday">10</span>
+                        <span class="stat-caption">Free Slots</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-number" id="statBookedToday">2</span>
+                        <span class="stat-caption">Booked</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- The 24-Hour / Operating Hours Slots Grid -->
+            <div class="grid-wrapper glass-panel">
+                <div class="grid-table-header">
+                    <h3 class="grid-header-title" id="gridDisplayTitle">Hourly Slots for Today</h3>
+                    <span class="grid-tip">Click any <span class="highlight-text">Available</span> slot to book</span>
+                </div>
+
+                <div class="slots-container" id="slotsGrid">
+                    <!-- 1-hour slots cards injected dynamically -->
+                    <div class="slots-loading">
+                        <div class="spinner"></div>
+                        <p>Loading availability...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: MY BOOKINGS (LOOKUP & CANCEL)       -->
+        <!-- ========================================== -->
+        <section class="tab-panel" id="tabMyBookings" aria-labelledby="navMyBookingsBtn">
+            <div class="my-bookings-header glass-panel">
+                <div class="lookup-form-wrap">
+                    <div>
+                        <h2 class="section-title">My Lab Bookings</h2>
+                        <p class="section-desc">Look up active bookings by your college registration number. Cancel
+                            anytime to instantly free up your quota.</p>
+                    </div>
+                    <div class="search-input-group">
+                        <input type="text" id="inputLookupReg" class="form-input"
+                            placeholder="Enter Reg No (e.g. RA2511003010001)" autocomplete="off">
+                        <button class="btn btn-primary" id="btnLookupBookings">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            Search
+                        </button>
+                    </div>
+                </div>
+
+                <div class="quick-reg-tags">
+                    <span class="quick-tag-label">Quick Switch:</span>
+                    <button class="tag-btn" data-reg="RA2511003010001" data-name="Asha K">Asha K
+                        (RA2511003010001)</button>
+                    <button class="tag-btn" data-reg="RA2511003010002" data-name="Vikram R">Vikram R
+                        (RA2511003010002)</button>
+                    <button class="tag-btn" data-reg="RA2511003010003" data-name="Sneha M">Sneha M
+                        (RA2511003010003)</button>
+                </div>
+            </div>
+
+            <!-- Bookings Cards Container -->
+            <div class="bookings-list-wrap glass-panel">
+                <div class="bookings-list-header">
+                    <h3 class="list-title" id="bookingsListTitle">Active Bookings for Asha K</h3>
+                    <span class="filter-count" id="activeBookingsCount">0 active</span>
+                </div>
+
+                <div class="bookings-grid" id="myBookingsContainer">
+                    <!-- Injected via JS -->
+                </div>
+
+                <!-- Booking History / Cancelled Slots Section -->
+                <details class="history-accordion" id="bookingHistoryAccordion">
+                    <summary class="history-summary">
+                        <span>View Cancelled / Past Booking History (<span id="cancelledCount">0</span>)</span>
+                        <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </summary>
+                    <div class="history-content" id="historyBookingsContainer">
+                        <!-- Cancelled bookings list -->
+                    </div>
+                </details>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: ADMIN LAB OVERVIEW (STRETCH GOAL)    -->
+        <!-- ========================================== -->
+        <section class="tab-panel" id="tabAdmin" aria-labelledby="navAdminBtn">
+            <div class="admin-header glass-panel">
+                <div class="admin-title-row">
+                    <div>
+                        <h2 class="section-title">Club Ops Admin Overview</h2>
+                        <p class="section-desc">Unified master view across all equipment for full transparency and zero
+                            WhatsApp chaos.</p>
+                    </div>
+                    <div class="admin-date-picker">
+                        <label for="adminSelectDate" class="control-label">Select Date:</label>
+                        <input type="date" id="adminSelectDate" class="form-input">
+                    </div>
+                </div>
+
+                <!-- Overall Lab Stats -->
+                <div class="admin-stats-grid">
+                    <div class="admin-stat-card">
+                        <span class="stat-icon">📊</span>
+                        <div>
+                            <span class="stat-value" id="adminTotalBooked">0</span>
+                            <span class="stat-label">Total Bookings Today</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="stat-icon">👥</span>
+                        <div>
+                            <span class="stat-value" id="adminActiveUsers">0</span>
+                            <span class="stat-label">Active Members</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="stat-icon">⚡</span>
+                        <div>
+                            <span class="stat-value" id="adminUtilization">0%</span>
+                            <span class="stat-label">Lab Resource Utilization</span>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <span class="stat-icon">⏳</span>
+                        <div>
+                            <span class="stat-value" id="adminWaitlistCount">0</span>
+                            <span class="stat-label">Waitlist Requests</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Matrix Timeline View (All Resources x Hours) -->
+            <div class="matrix-view-card glass-panel">
+                <div class="matrix-header">
+                    <h3>Lab Resource Schedule Matrix</h3>
+                    <span class="matrix-caption">Hour-by-hour cross-equipment status</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="admin-matrix-table" id="adminMatrixTable">
+                        <!-- Rendered by JS -->
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 4: ACCEPTANCE TESTS & VERIFICATION     -->
+        <!-- ========================================== -->
+        <section class="tab-panel" id="tabTests" aria-labelledby="navTestsBtn">
+            <div class="tests-header glass-panel">
+                <div class="tests-title-box">
+                    <h2 class="section-title">Automated Acceptance Test Suite</h2>
+                    <p class="section-desc">Direct verification of all four "We'll Test" scenarios and edge cases from
+                        <code class="code-pill">rules.md</code>.
+                    </p>
+                </div>
+                <div class="test-actions">
+                    <button class="btn btn-primary" id="btnRunAcceptanceTests">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Run All Acceptance Tests
+                    </button>
+                    <button class="btn btn-secondary" id="btnResetDemoData">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                            <path d="M21 3v5h-5"></path>
+                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                            <path d="M8 16H3v5"></path>
+                        </svg>
+                        Reset Seed Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Test Cases Grid -->
+            <div class="test-suite-card glass-panel">
+                <div class="test-progress-bar-wrap">
+                    <div class="test-progress-info">
+                        <span id="testSummaryText">Ready to run verification suite</span>
+                        <span id="testScoreBadge" class="score-badge">0 / 8 Passed</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="testProgressFill" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <div class="test-cases-list" id="testCasesList">
+                    <!-- Populated dynamically: Test 1, Test 2, Test 3, Test 4, Edge Cases -->
+                </div>
+
+                <!-- Live Test Execution Terminal -->
+                <div class="terminal-box">
+                    <div class="terminal-header">
+                        <div class="terminal-dots">
+                            <span class="dot red"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot green"></span>
+                        </div>
+                        <span class="terminal-title">API Execution Log (HTTP Statuses &amp; Response Payloads)</span>
+                        <button class="btn-terminal-clear" id="btnClearTerminal">Clear</button>
+                    </div>
+                    <pre class="terminal-body"
+                        id="terminalLog">Click "Run All Acceptance Tests" to execute the test suite against the backend API.</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 5: RULES & SKILLS GUIDE (DOCUMENTATION)-->
+        <!-- ========================================== -->
+        <section class="tab-panel" id="tabRules" aria-labelledby="navRulesBtn">
+            <div class="guide-container">
+
+                <div class="guide-card glass-panel">
+                    <h2 class="guide-title">📋 SlotSync (PS-08) — Business Rules Matrix</h2>
+                    <div class="table-responsive">
+                        <table class="rules-table">
+                            <thead>
+                                <tr>
+                                    <th>Rule ID</th>
+                                    <th>Rule Name</th>
+                                    <th>Enforcement</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="rule-badge">R1</span></td>
+                                    <td><strong>Exact 1-Hour Slots</strong></td>
+                                    <td><span class="badge-server">Server</span></td>
+                                    <td>Slots are exactly 1 hour long and aligned to the hour (e.g. 14:00 - 15:00).</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="rule-badge">R2</span></td>
+                                    <td><strong>7-Day Booking Window</strong></td>
+                                    <td><span class="badge-server">Server</span></td>
+                                    <td>Only the next 7 days (including today) are bookable. Beyond 7 days returns <code
+                                            class="code-pill">400 OUT_OF_RANGE</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="rule-badge">R3</span></td>
+                                    <td><strong>Single Active Booking</strong></td>
+                                    <td><span class="badge-server">Server + DB</span></td>
+                                    <td>A slot can have only one active booking per resource. Duplicate attempt returns
+                                        <code class="code-pill">409 SLOT_TAKEN</code>.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><span class="rule-badge">R4</span></td>
+                                    <td><strong>No Past Slots</strong></td>
+                                    <td><span class="badge-server">Server</span></td>
+                                    <td>No bookings for slots that have already started or passed. Returns <code
+                                            class="code-pill">400 PAST_SLOT</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="rule-badge highlight">R5</span></td>
+                                    <td><strong>Fair-Use Limit (KEY CHALLENGE)</strong></td>
+                                    <td><span class="badge-server">Server</span></td>
+                                    <td><strong>Max 2 active booked hours per registration number, per resource, per
+                                            day</strong>. Exceeding returns <code
+                                            class="code-pill">422 LIMIT_EXCEEDED</code>.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="rule-badge">R6</span></td>
+                                    <td><strong>Mandatory Fields</strong></td>
+                                    <td><span class="badge-server">Server + UI</span></td>
+                                    <td>Name, Registration Number, and Purpose are strictly required and cannot be empty
+                                        strings.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="rule-badge">R7</span></td>
+                                    <td><strong>Cancellation Frees Quota</strong></td>
+                                    <td><span class="badge-server">Server</span></td>
+                                    <td>A cancelled booking frees the slot and no longer counts toward the 2-hour daily
+                                        limit.</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="rule-badge">R8</span></td>
+                                    <td><strong>No Auth Required</strong></td>
+                                    <td><span class="badge-neutral">System</span></td>
+                                    <td>Users identify via college registration number for fast lab access without login
+                                        hurdles.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="guide-card glass-panel">
+                    <h2 class="guide-title">🔌 REST API Specification Contract</h2>
+                    <div class="api-endpoints-grid">
+                        <div class="endpoint-card">
+                            <span class="http-badge get">GET</span>
+                            <code class="endpoint-uri">/api/resources</code>
+                            <p class="endpoint-desc">Returns list of all bookable lab resources with status and
+                                capabilities.</p>
+                        </div>
+                        <div class="endpoint-card">
+                            <span class="http-badge get">GET</span>
+                            <code class="endpoint-uri">/api/slots?resource={id}&amp;date={YYYY-MM-DD}</code>
+                            <p class="endpoint-desc">Returns hourly availability for the resource and date with state
+                                (available/booked/past).</p>
+                        </div>
+                        <div class="endpoint-card">
+                            <span class="http-badge post">POST</span>
+                            <code class="endpoint-uri">/api/bookings</code>
+                            <p class="endpoint-desc">Creates a booking. Strictly enforces R1-R6. Returns <code
+                                    class="code-pill">201</code> on success, <code class="code-pill">409</code> or <code
+                                    class="code-pill">422</code> on conflict.</p>
+                        </div>
+                        <div class="endpoint-card">
+                            <span class="http-badge get">GET</span>
+                            <code class="endpoint-uri">/api/bookings?reg={regNo}</code>
+                            <p class="endpoint-desc">Returns active and historical bookings for the registration number
+                                ("My bookings").</p>
+                        </div>
+                        <div class="endpoint-card">
+                            <span class="http-badge delete">DELETE</span>
+                            <code class="endpoint-uri">/api/bookings/:id</code>
+                            <p class="endpoint-desc">Cancels booking, frees the slot, and restores the student's
+                                fair-use quota.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- MODAL: BOOKING DIALOG                      -->
+    <!-- ========================================== -->
+    <div class="modal-backdrop" id="bookingModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+        <div class="modal-box glass-panel">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="modalTitle">Book Lab Slot</h3>
+                    <p class="modal-subtitle" id="modalSubtitle">Confirm equipment, time, and reservation details</p>
+                </div>
+                <button class="btn-close" id="btnCloseModal" aria-label="Close modal">×</button>
+            </div>
+
+            <div class="modal-slot-summary" id="modalSlotSummary">
+                <div class="summary-item">
+                    <span class="summary-label">Equipment</span>
+                    <span class="summary-value" id="modalResourceVal">3D Printer</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Date</span>
+                    <span class="summary-value" id="modalDateVal">Today, 8 Oct</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Time Slot</span>
+                    <span class="summary-value highlight" id="modalTimeVal">14:00 - 15:00 (1 Hour)</span>
+                </div>
+            </div>
+
+            <!-- Server error alert box inside modal -->
+            <div class="modal-error-alert" id="modalErrorAlert" hidden>
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-msg" id="modalErrorMsg">Error message from server</div>
+            </div>
+
+            <!-- Booking Form -->
+            <form id="bookingForm" class="booking-form" novalidate>
+                <div class="form-group">
+                    <label for="inputName" class="form-label">Full Name <span class="req">*</span></label>
+                    <input type="text" id="inputName" class="form-input" placeholder="e.g. Asha K" required>
+                    <span class="field-hint">Must not be empty (Rule R6)</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="inputRegNo" class="form-label">Registration Number <span class="req">*</span></label>
+                    <input type="text" id="inputRegNo" class="form-input" placeholder="e.g. RA2511003010001" required>
+                    <span class="field-hint">Used to enforce 2h/day limit (Rule R5)</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="inputPurpose" class="form-label">Purpose / Project Description <span
+                            class="req">*</span></label>
+                    <textarea id="inputPurpose" class="form-textarea" rows="2"
+                        placeholder="e.g. Print enclosure for IoT sensor project" required></textarea>
+                    <span class="field-hint">Provide clear lab usage reason</span>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btnCancelModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitBooking">
+                        <span class="btn-text">Confirm Booking</span>
+                        <div class="btn-spinner" hidden></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAL: SWITCH ACTIVE USER PROFILE          -->
+    <!-- ========================================== -->
+    <div class="modal-backdrop" id="userSwitchModal" role="dialog" aria-modal="true" aria-labelledby="switchModalTitle"
+        hidden>
+        <div class="modal-box glass-panel modal-sm">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="switchModalTitle">Switch Student Profile</h3>
+                    <p class="modal-subtitle">Change who you are booking as for testing fair-use</p>
+                </div>
+                <button class="btn-close" id="btnCloseSwitchModal">×</button>
+            </div>
+
+            <div class="switch-user-content">
+                <div class="form-group">
+                    <label for="quickSelectUser" class="form-label">Pre-configured Demo Students:</label>
+                    <select id="quickSelectUser" class="form-select">
+                        <option value="RA2511003010001" data-name="Asha K">Asha K (RA2511003010001)</option>
+                        <option value="RA2511003010002" data-name="Vikram R">Vikram R (RA2511003010002)</option>
+                        <option value="RA2511003010003" data-name="Sneha M">Sneha M (RA2511003010003)</option>
+                        <option value="RA2511003010004" data-name="Kabir S">Kabir S (RA2511003010004)</option>
+                    </select>
+                </div>
+
+                <div class="form-divider"><span>OR ENTER CUSTOM</span></div>
+
+                <div class="form-group">
+                    <label for="customUserName" class="form-label">Name:</label>
+                    <input type="text" id="customUserName" class="form-input" placeholder="Your Name">
+                </div>
+                <div class="form-group">
+                    <label for="customUserReg" class="form-label">Registration No:</label>
+                    <input type="text" id="customUserReg" class="form-input" placeholder="e.g. RA2511003010999">
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btnCancelSwitchModal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveSwitchUser">Set Active Student</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="api.js"></script>
+    <script src="app.js"></script>
+    <script src="tests.js"></script>
+</body>
+
+</html>
